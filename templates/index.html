@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prometheus - LCAD</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #080d1a; color: #f1f5f9; display: flex; flex-direction: column; height: 100vh; overflow: hidden; user-select: none; }
+        .header { background: linear-gradient(135deg, #0f1d3a 0%, #0f2454 100%); padding: 14px 20px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid rgba(56,189,248,0.15); z-index: 10; }
+        .robot-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; background: linear-gradient(135deg, #0ea5e9, #7c3aed); border: 2px solid rgba(56,189,248,0.4); }
+        .header-info { flex: 1; }
+        .header-title { font-size: 16px; font-weight: 600; color: #f0f9ff; }
+        .header-sub { font-size: 12px; color: #7dd3fc; display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+        .status-dot { width: 7px; height: 7px; background: #22c55e; border-radius: 50%; }
+        .lcad-badge { background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.25); color: #7dd3fc; font-size: 11px; padding: 3px 10px; border-radius: 20px; }
+        .chat-area { flex: 1; overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 18px; background: #080d1a; user-select: text;}
+        .msg-row { display: flex; align-items: flex-end; gap: 10px; }
+        .msg-row.user { flex-direction: row-reverse; }
+        .avatar { width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .avatar-ai { background: linear-gradient(135deg, #0ea5e9, #7c3aed); border: 1.5px solid rgba(56,189,248,0.35); }
+        .avatar-user { background: linear-gradient(135deg, #f97316, #ec4899); color: white; font-size: 12px; font-weight: bold; border: 1.5px solid rgba(249,115,22,0.35); }
+        .bubble-wrapper { display: flex; flex-direction: column; max-width: 72%; }
+        .msg-row.user .bubble-wrapper { align-items: flex-end; }
+        .bubble { padding: 11px 15px; border-radius: 18px; font-size: 14.5px; line-height: 1.55; word-wrap: break-word; }
+        .bubble-ai { background: #1a2540; border: 1px solid rgba(56,189,248,0.12); border-bottom-left-radius: 5px; color: #e2e8f0; }
+        .bubble-user { background: linear-gradient(135deg, #0ea5e9, #0284c7); border-bottom-right-radius: 5px; color: #fff; }
+        .bubble-time { font-size: 10.5px; color: rgba(255,255,255,0.35); margin-top: 4px; }
+        .thinking { display: flex; align-items: center; gap: 5px; padding: 12px 16px; background: #1a2540; border: 1px solid rgba(56,189,248,0.12); border-radius: 18px; border-bottom-left-radius: 5px; }
+        .dot { width: 7px; height: 7px; border-radius: 50%; background: #7dd3fc; animation: bounce 1.2s infinite; }
+        @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-7px)} }
+        .input-bar { background: #0d1629; border-top: 1px solid rgba(56,189,248,0.1); padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
+        .input-wrap { flex: 1; background: #1a2540; border: 1px solid rgba(56,189,248,0.18); border-radius: 24px; display: flex; align-items: center; padding: 0 6px 0 16px; }
+        .msg-input { background: transparent; border: none; outline: none; color: #f1f5f9; font-size: 14.5px; flex: 1; padding: 11px 6px; }
+        .recording-pill { display: none; align-items: center; gap: 6px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; font-size: 12px; padding: 4px 12px; border-radius: 20px; }
+        .icon-btn { width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .btn-mic { background: #1e3a5f; touch-action: none; }
+        .btn-mic.recording { background: #ef4444 !important; transform: scale(1.1); box-shadow: 0 0 15px rgba(239,68,68,0.4); }
+        .btn-send { background: linear-gradient(135deg, #0ea5e9, #7c3aed); }
+        svg { width: 20px; height: 20px; fill: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="robot-avatar"><img src="/static/prometheus.png" style="width:100%"></div>
+        <div class="header-info">
+            <div class="header-title">Prometheus</div>
+            <div class="header-sub"><span class="status-dot"></span>Online · Autônomo</div>
+        </div>
+        <div class="lcad-badge">LCAD</div>
+    </div>
+
+    <div class="chat-area" id="chat"></div>
+
+    <div class="input-bar">
+        <button id="mic-btn" class="icon-btn btn-mic">
+            <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+        </button>
+        <div class="input-wrap">
+            <input class="msg-input" type="text" id="text-input" placeholder="Digite ou segure o microfone..." />
+            <div class="recording-pill" id="rec-pill">Gravando...</div>
+        </div>
+        <button class="icon-btn btn-send" onclick="enviarMensagem()">
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+    </div>
+
+    <script>
+        let ws, audioContext, isRecording = false, recognition, currentAudioSource = null;
+        let audioQueue = [], audioLock = false;
+        const chat = document.getElementById('chat');
+        const input = document.getElementById('text-input');
+        const micBtn = document.getElementById('mic-btn');
+        const recPill = document.getElementById('rec-pill');
+
+function getTime() { return new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); }
+
+function addBubble(text, isUser) {
+    removeThinking();
+    const row = document.createElement('div');
+    row.className = 'msg-row' + (isUser ? ' user' : '');
+    row.innerHTML = `
+        <div class="avatar ${isUser ? 'avatar-user' : 'avatar-ai'}">
+            ${isUser ? 'EU' : '<img src="/static/prometheus.png" style="width:100%">'}
+        </div>
+        <div class="bubble-wrapper">
+            <div class="bubble ${isUser ? 'bubble-user' : 'bubble-ai'}">${text}</div>
+            <span class="bubble-time">${getTime()}</span>
+        </div>`;
+    chat.appendChild(row);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+let thinkingEl = null;
+function showThinking() {
+    removeThinking();
+    const row = document.createElement('div');
+    row.className = 'msg-row';
+    row.innerHTML = `<div class="avatar avatar-ai"><img src="/static/prometheus.png" style="width:100%"></div>
+        <div class="thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+    chat.appendChild(row);
+    thinkingEl = row;
+    chat.scrollTop = chat.scrollHeight;
+}
+function removeThinking() { if (thinkingEl) thinkingEl.remove(); thinkingEl = null; }
+
+// --- LÓGICA PUSH-TO-TALK ---
+if ('webkitSpeechRecognition' in window) {
+    recognition = new webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'pt-BR';
+    
+    recognition.onresult = (e) => {
+        let text = '';
+        for (let i = e.resultIndex; i < e.results.length; ++i) text += e.results[i][0].transcript;
+        input.value = text;
+    };
+    
+    recognition.onend = () => {
+        if (!isRecording && input.value.trim()) enviarMensagem();
+    };
+}
+
+function startRecording(e) {
+    e.preventDefault();
+    if (currentAudioSource) currentAudioSource.stop();
+    input.value = "";
+    isRecording = true;
+    micBtn.classList.add('recording');
+    recPill.style.display = 'flex';
+    input.style.display = 'none';
+    try { recognition.start(); } catch(err) {}
+}
+
+function stopRecording(e) {
+    e.preventDefault();
+    if (!isRecording) return;
+    isRecording = false;
+    micBtn.classList.remove('recording');
+    recPill.style.display = 'none';
+    input.style.display = 'block';
+    recognition.stop();
+}
+
+micBtn.addEventListener('mousedown', startRecording);
+window.addEventListener('mouseup', (e) => { if(isRecording) stopRecording(e); });
+micBtn.addEventListener('touchstart', startRecording);
+micBtn.addEventListener('touchend', stopRecording);
+
+function conectarWS() {
+    const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(`${proto}://${window.location.host}/ws`);
+    ws.binaryType = "arraybuffer";
+    ws.onmessage = (e) => {
+        if (typeof e.data === "string") {
+            const d = JSON.parse(e.data);
+            if (d.texto) addBubble(d.texto, false);
+        } else { playAudio(e.data); }
+    };
+    ws.onclose = () => setTimeout(conectarWS, 1000);
+}
+conectarWS();
+
+function enviarMensagem() {
+    const t = input.value.trim();
+    if (!t || ws.readyState !== WebSocket.OPEN) return;
+    addBubble(t, true);
+    showThinking();
+    ws.send(JSON.stringify({ texto: t }));
+    input.value = '';
+}
+
+async function playAudio(buf) {
+    if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    audioQueue.push(buf);
+    if (audioLock) return;
+    audioLock = true;
+    while (audioQueue.length > 0) {
+        const data = audioQueue.shift();
+        const decoded = await audioContext.decodeAudioData(data);
+        const src = audioContext.createBufferSource();
+        src.buffer = decoded;
+        src.connect(audioContext.destination);
+        currentAudioSource = src;
+        await new Promise(r => { src.onended = r; src.start(0); });
+    }
+    audioLock = false;
+}
+
+input.onkeypress = (e) => { if(e.key==='Enter') enviarMensagem(); };
+
+window.addEventListener('load', () => {
+    setTimeout(() => addBubble("Conexão estabelecida. Sistema Prometheus pronto para operação.", false), 500);
+});
+</script>
+</body>
+</html>
