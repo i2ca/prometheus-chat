@@ -11,7 +11,7 @@ O projeto é dividido em três camadas principais:
 2. **Local Backend:** Servidor FastAPI que gerencia o estado da máquina física, intercepta comandos de segurança (ex: protocolo de café), controla o hardware do Unitree G1 e sintetiza voz localmente usando o modelo **Kokoro TTS**.
 3. **Remote Brain:** Servidor dedicado que hospeda o Large Language Model (Qwen2.5:7b via Ollama) para processamento semântico e geração das respostas da personalidade Prometheus.
 
-## ⚙️ Pré-requisitos
+## Pré-requisitos
 
 Para rodar este projeto localmente (no computador Argos), você precisará de:
 * Python 3.10.

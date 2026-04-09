@@ -1,14 +1,7 @@
-# Arquivos de rascunho
 aa.py
-
-# Certificados de segurança (gerados localmente)
 *.pem
-
-# Pastas automáticas do Python
 __pycache__/
 venv/
 .env
-
-# Arquivos do sistema
 .DS_Store
 Thumbs.db
